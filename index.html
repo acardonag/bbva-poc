@@ -148,34 +148,6 @@
             padding-top: 16px;
         }
 
-        /* Loading overlay */
-        #loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(7, 33, 70, 0.1);
-            border-left-color: var(--bbva-navy);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            100% {
-                transform: rotate(360deg);
-            }
-        }
     </style>
 </head>
 
@@ -207,14 +179,9 @@
         </div>
     </div>
 
-    <div id="loading">
-        <div class="spinner"></div>
-    </div>
-
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const msg = urlParams.get('message');
-        const session = urlParams.get('sessionId'); // ID de sesión para vincular con el chat
 
         const mensajeElement = document.getElementById('mensaje');
         if (msg) {
@@ -224,55 +191,25 @@
         }
 
         async function responder(estado) {
-            const loadingOverlay = document.getElementById('loading');
-            loadingOverlay.style.display = 'flex';
-
-            // URL del nodo Webhook en n8n (Actualizada a tu servidor Easypanel)
             const WEBHOOK_URL = 'https://nuketownlabs-n8n.ko2m0t.easypanel.host/webhook/pago-confirmado';
+
+            // Usamos URLSearchParams en lugar de JSON para evitar disparar el CORS de 'application/json'
+            const data = new URLSearchParams();
+            data.append('status', estado);
+            data.append('sessionId', urlParams.get('sessionId'));
+            data.append('mensaje', msg);
 
             try {
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        status: estado,
-                        sessionId: session, // Enviamos el ID de sesión de vuelta
-                        mensaje: msg
-                    })
+                    body: data // Enviamos como formulario simple
                 });
 
-                // Feedback visual después de enviar
                 if (response.ok) {
-                    if (estado === 'APROBADO') {
-                        document.querySelector('.content').innerHTML = `
-                            <div style="color: var(--bbva-navy); padding: 40px 0;">
-                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2DCCCD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
-                                <h3 style="margin-top:20px;">¡Pago Confirmado!</h3>
-                                <p style="margin-top:10px; color:#666;">La transacción ha sido procesada correctamente.</p>
-                            </div>
-                        `;
-                    } else {
-                        document.querySelector('.content').innerHTML = `
-                             <div style="color: #666; padding: 40px 0;">
-                                <h3 style="margin-top:20px;">Transacción Cancelada</h3>
-                                <p style="margin-top:10px;">Has rechazado la operación.</p>
-                            </div>
-                        `;
-                    }
-                } else {
-                    throw new Error('Respuesta no exitosa del servidor');
+                    alert('¡BBVA: Pago ' + estado + ' registrado!');
                 }
-
             } catch (error) {
-                alert('Hubo un error al conectar con el servidor. Por favor intenta nuevamente.');
-                console.error('Error:', error);
-            } finally {
-                loadingOverlay.style.display = 'none';
+                console.error('Error detallado:', error);
             }
         }
     </script>
