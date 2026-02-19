@@ -301,7 +301,7 @@
             const data = new URLSearchParams();
             data.append('status', estado);
             data.append('sessionId', urlParams.get('sessionId'));
-            data.append('mensaje', msg);
+            data.append('mensaje', "Su transacción ha sido aprobada, gracias por confiar en BBVA.");
 
             for (let WEBHOOK_URL of URLs) {
                 try {
