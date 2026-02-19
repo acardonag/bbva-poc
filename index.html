@@ -191,7 +191,11 @@
         }
 
         async function responder(estado) {
-            const WEBHOOK_URL = 'https://nuketownlabs-n8n.ko2m0t.easypanel.host/webhook-test/pago-confirmado';
+            // URLs ordenadas por prioridad
+            const URLs = [
+                'https://nuketownlabs-n8n.ko2m0t.easypanel.host/webhook-test/pago-confirmado',
+                'https://nuketownlabs-n8n.ko2m0t.easypanel.host/webhook/pago-confirmado'
+            ];
 
             // Usamos URLSearchParams en lugar de JSON para evitar disparar el CORS de 'application/json'
             const data = new URLSearchParams();
@@ -199,18 +203,31 @@
             data.append('sessionId', urlParams.get('sessionId'));
             data.append('mensaje', msg);
 
-            try {
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    body: data // Enviamos como formulario simple
-                });
+            for (let WEBHOOK_URL of URLs) {
+                try {
+                    const response = await fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        body: data // Enviamos como formulario simple
+                    });
 
-                if (response.ok) {
-                    alert('¡BBVA: Pago ' + estado + ' registrado!');
+                    if (response.ok) {
+                        alert('¡BBVA: Pago ' + estado + ' registrado!');
+                        return; // Salir si fue exitoso
+                    } else if (response.status === 404) {
+                        console.log('URL no encontrada:', WEBHOOK_URL, '- Intentando siguiente...');
+                        continue; // Intentar siguiente URL
+                    } else {
+                        alert('Error ' + response.status + ' en el servidor');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error en ' + WEBHOOK_URL + ':', error);
+                    // Continuar con la siguiente URL si hay error de conexión
                 }
-            } catch (error) {
-                console.error('Error detallado:', error);
             }
+
+            // Si llega aquí, ninguna URL funcionó
+            alert('No se pudo conectar con el servidor. Por favor intenta más tarde.');
         }
     </script>
 </body>
