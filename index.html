@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBVA - Validación de Pago</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bbva-navy: #072146;
+            --bbva-blue: #1973B8;
+            --bbva-aqua: #2DCCCD;
+            --bbva-white: #FFFFFF;
+            --bg-color: #F4F4F4;
+            --text-color: #121212;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--bbva-white);
+            max-width: 400px;
+            width: 100%;
+            border-radius: 8px;
+            /* BBVA usa bordes suaves pero definidos */
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: var(--bbva-navy);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo {
+            height: 40px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
+            /* Filtro para invertir el color a blanco */
+            filter: brightness(0) invert(1);
+        }
+
+        .content {
+            padding: 30px 24px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--bbva-navy);
+            margin-bottom: 16px;
+        }
+
+        .message-box {
+            background-color: #F8F9FA;
+            border-left: 4px solid var(--bbva-aqua);
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .question {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-color);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            border: none;
+            border-radius: 4px;
+            /* Botones BBVA suelen ser sutilmente redondeados o casi cuadrados en web */
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-confirm {
+            background-color: var(--bbva-navy);
+            /* Azul oscuro corporativo */
+            color: var(--bbva-white);
+            /* Gradiente sutil opcional, pero mejor plano para estilo corporativo moderno */
+        }
+
+        .btn-confirm:hover {
+            background-color: #041836;
+        }
+
+        .btn-reject {
+            background-color: transparent;
+            color: var(--bbva-navy);
+            border: 1px solid var(--bbva-navy);
+        }
+
+        .btn-reject:hover {
+            background-color: rgba(7, 33, 70, 0.05);
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 16px;
+        }
+
+        /* Loading overlay */
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(7, 33, 70, 0.1);
+            border-left-color: var(--bbva-navy);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <img src="https://www.bbva.com.co/content/dam/public-web/colombia/images/rcp/Logo-BBVA-30-anios.svg"
+                alt="BBVA" class="logo">
+        </div>
+
+        <div class="content">
+            <h2>Validación de Transacción</h2>
+
+            <div class="message-box">
+                <p id="mensaje">Cargando detalles de la operación...</p>
+            </div>
+
+            <p class="question">¿Deseas confirmar este pago?</p>
+
+            <div class="actions">
+                <button class="btn btn-confirm" onclick="responder('APROBADO')">Confirmar Pago</button>
+                <button class="btn btn-reject" onclick="responder('RECHAZADO')">Cancelar</button>
+            </div>
+
+            <div class="footer">
+                &copy; 2024 BBVA Colombia S.A.
+            </div>
+        </div>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const msg = urlParams.get('message');
+        const session = urlParams.get('sessionId'); // ID de sesión para vincular con el chat
+
+        const mensajeElement = document.getElementById('mensaje');
+        if (msg) {
+            mensajeElement.innerText = msg;
+        } else {
+            mensajeElement.innerText = "No se encontraron detalles de la transacción.";
+        }
+
+        async function responder(estado) {
+            const loadingOverlay = document.getElementById('loading');
+            loadingOverlay.style.display = 'flex';
+
+            // URL del nodo Webhook en n8n (Actualizada a tu servidor Easypanel)
+            const WEBHOOK_URL = 'https://nuketownlabs-n8n.ko2m0t.easypanel.host/webhook/pago-confirmado';
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: estado,
+                        sessionId: session, // Enviamos el ID de sesión de vuelta
+                        mensaje: msg
+                    })
+                });
+
+                // Feedback visual después de enviar
+                if (response.ok) {
+                    if (estado === 'APROBADO') {
+                        document.querySelector('.content').innerHTML = `
+                            <div style="color: var(--bbva-navy); padding: 40px 0;">
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2DCCCD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                <h3 style="margin-top:20px;">¡Pago Confirmado!</h3>
+                                <p style="margin-top:10px; color:#666;">La transacción ha sido procesada correctamente.</p>
+                            </div>
+                        `;
+                    } else {
+                        document.querySelector('.content').innerHTML = `
+                             <div style="color: #666; padding: 40px 0;">
+                                <h3 style="margin-top:20px;">Transacción Cancelada</h3>
+                                <p style="margin-top:10px;">Has rechazado la operación.</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error('Respuesta no exitosa del servidor');
+                }
+
+            } catch (error) {
+                alert('Hubo un error al conectar con el servidor. Por favor intenta nuevamente.');
+                console.error('Error:', error);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
